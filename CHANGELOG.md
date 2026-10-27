@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.2 (2026-10-27)
+
+- Recent-play cards now show real video thumbnails. Windows Shell thumbnails are tried first;
+  when the shell has no provider, Prism decodes a frame with FFmpeg as a fallback.
+
 ## 1.0.1 (2026-10-27)
 
 - Calmer home screen: smaller hero copy, quieter subtitle and format list; no functional changes.
