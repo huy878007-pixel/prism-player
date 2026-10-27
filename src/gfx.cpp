@@ -465,8 +465,9 @@ void Gfx::drawVideo(const RectF& area, int rotation, bool fillCrop) {
     RectF dest{cx - dw * 0.5f, cy - dh * 0.5f, dw, dh};
     if (sideways) dest = RectF{cx - dh * 0.5f, cy - dw * 0.5f, dh, dw};
 
-    D2D1_INTERPOLATION_MODE mode = (dw < vw) ? D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC
-                                             : D2D1_INTERPOLATION_MODE_LINEAR;
+    // High-quality cubic for both down- and up-scaling; 1080p -> 1440p
+    // benefits visibly over bilinear and the GPU cost is negligible.
+    D2D1_INTERPOLATION_MODE mode = D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC;
     if (rotation != 0) dc_->SetTransform(D2D1::Matrix3x2F::Rotation((float)rotation, D2D1::Point2F(cx, cy)));
     dc_->DrawBitmap(video_.Get(), dest.ToD2D(), 1.f, mode, nullptr);
     if (rotation != 0) dc_->SetTransform(D2D1::Matrix3x2F::Identity());
