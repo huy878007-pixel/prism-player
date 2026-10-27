@@ -30,6 +30,8 @@ if ($Dist) {
     Copy-Item (Join-Path $build 'bin\*.dll') $distDir -Force
     Copy-Item (Join-Path $root 'README.md') $distDir -Force
     Copy-Item (Join-Path $root 'THIRD_PARTY_NOTICES.md') $distDir -Force
+    if (Test-Path (Join-Path $root 'LICENSE')) { Copy-Item (Join-Path $root 'LICENSE') $distDir -Force }
+    if (Test-Path (Join-Path $root 'NOTICE')) { Copy-Item (Join-Path $root 'NOTICE') $distDir -Force }
     if (Test-Path (Join-Path $root 'resources\file-icons')) {
         $iconDist = Join-Path $distDir 'icons'
         New-Item -ItemType Directory -Path $iconDist -Force | Out-Null
