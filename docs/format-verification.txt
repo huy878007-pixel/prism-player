@@ -1,0 +1,27 @@
+﻿
+File               SizeMB Result Exit   Ms PngKB
+----               ------ ------ ----   -- -----
+demo.ac3.mka         0.28 OK        0 1052   307
+demo.dts.mka         2.03 OK        0 1015   306
+demo.flac            0.49 OK        0 1012   305
+demo.flv             8.21 OK        0 1022   766
+demo.m4a             0.28 OK        0 1021   305
+demo.mp3             0.28 OK        0 1023   306
+demo.opus.mka         0.2 OK        0 1024   307
+demo.wav              1.1 OK        0 1019   307
+demo-4k-hevc.mkv     0.61 OK        0 1013   395
+demo-av1.mp4         0.31 OK        0 1011   575
+demo-h264.mp4       86.73 OK        0 1016  1070
+demo-hevc10.mkv      0.44 OK        0 1012   414
+demo-mjpeg.avi       7.08 OK        0 1019   572
+demo-mpeg2.ts        4.31 OK        0 1019   268
+demo-mpeg4.avi       2.69 OK        0 1008   326
+demo-prores.mov     89.57 OK        0 1007   984
+demo-rotated.mp4    35.03 OK        0 1008  1070
+demo-subtitled.mkv  86.73 OK        0 1013  1081
+demo-theora.ogv      3.06 OK        0 1007   256
+demo-vp9.webm         0.9 OK        0 1008   405
+demo-wmv.wmv         7.54 OK        0 1011   289
+
+
+

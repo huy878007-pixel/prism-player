@@ -1,0 +1,33 @@
+#include <windows.h>
+
+1 ICON "prism.ico"
+1 RT_MANIFEST "app.manifest"
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION 1,0,0,0
+PRODUCTVERSION 1,0,0,0
+FILEFLAGSMASK 0x3fL
+FILEFLAGS 0x0L
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_APP
+FILESUBTYPE VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "080404b0"
+        BEGIN
+            VALUE "CompanyName", "Prism"
+            VALUE "FileDescription", "Prism Universal Video Player"
+            VALUE "FileVersion", "1.0.0.0"
+            VALUE "InternalName", "Prism"
+            VALUE "OriginalFilename", "Prism.exe"
+            VALUE "ProductName", "Prism Player"
+            VALUE "ProductVersion", "1.0.0.0"
+            VALUE "LegalCopyright", "Powered by FFmpeg (GPL)"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x804, 1200
+    END
+END
