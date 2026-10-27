@@ -53,7 +53,6 @@ Prism 是一个用 C++ / Win32 / Direct2D 从零写的本地播放器：解码�
 ## 快速开始
 
 ```powershell
-cd player
 .\build.ps1 -Dist          # 构建并打包到 dist\Prism
 .\dist\Prism\Prism.exe     # 双击也可以
 ```
@@ -79,7 +78,6 @@ Prebuilt binaries and `_vendor/` are not committed because the FFmpeg shared bui
 4. Build and package:
 
 ```powershell
-cd player
 .\build.ps1 -Dist
 .\dist\Prism\Prism.exe
 ```
