@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1 (2026-10-27)
+
+- Calmer home screen: smaller hero copy, quieter subtitle and format list; no functional changes.
+
 ## 1.0.0 (2026-10-27)
 
 Initial public source snapshot.

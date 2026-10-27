@@ -46,7 +46,7 @@ void ApplyThemeColors() {
 namespace {
 
 const wchar_t* kBrand = L"PRISM";
-const wchar_t* kTagline = L"万能播放器";
+const wchar_t* kTagline = L"本地播放器";
 
 void StrokeArc(Painter& p, float cx, float cy, float radius, float startDeg, float sweepDeg, float width,
                Color c) {
@@ -372,12 +372,12 @@ void App::drawHome() {
     drawTitleBar();
 
     // -- hero copy
-    float heroSize = std::clamp(W_ * 0.0375f, 46.f, 64.f);
-    p_.TextCore(L"什么格式，都能放。", rHero_, heroSize, theme::Text, 600, FontFace::Display,
-                DWRITE_TEXT_ALIGNMENT_LEADING, DWRITE_PARAGRAPH_ALIGNMENT_NEAR, false, -0.02f, 1.08f, false);
-    p_.TextWrap(L"Prism 用 FFmpeg 原生解码。MKV、MP4、MOV、AVI、TS、WEBM、RMVB…… 视频与音频一视同仁；"
-                L"几百种容器与编码，全部本地播放，不转码、不上传。",
-                rSub_, 14.5f, theme::Text2, 400, FontFace::Text, 1.72f);
+    float heroSize = std::clamp(W_ * 0.028f, 34.f, 44.f);
+    p_.TextCore(L"本地播放，简单一点。", rHero_, heroSize, theme::Text, 550, FontFace::Display,
+                DWRITE_TEXT_ALIGNMENT_LEADING, DWRITE_PARAGRAPH_ALIGNMENT_NEAR, false, 0.f, 1.12f, false);
+    p_.TextWrap(L"Prism 使用 FFmpeg 解码，支持常见的视频与音频格式。"
+                L"所有处理都在本机完成，不转码、不上传。",
+                rSub_, 13.5f, theme::Text2, 400, FontFace::Text, 1.68f);
 
     bool hovOpen = hovered(kHitOpenFile);
     bool hovFolder = hovered(kHitOpenFolder);
@@ -392,11 +392,11 @@ void App::drawHome() {
     float fmtY = std::max(H_ - 236.f, rDrop_.Bottom() + 48.f);
     if (fmtY + 74.f < H_ - 64.f) {
         RectF formats{64, fmtY, 600, 84};
-        p_.TextTracked(L"支持的格式，多到不用记", RectF{64, formats.y - 28, 400, 18}, 10.5f,
-                       Fade(theme::Accent, 0.72f), 0.08f, 600);
-        p_.TextWrap(L"MKV · MP4 · MOV · AVI · TS · WEBM · RMVB · FLV · WMV · OGV · ProRes · DNxHR · "
-                    L"H.264 · HEVC · AV1 · VP9 · VVC · MPEG-2 · FLAC · ALAC · DTS · AAC · 8K / HDR",
-                    formats, 11.f, theme::Text3, 400, FontFace::Text, 1.9f);
+        p_.TextTracked(L"常见格式", RectF{64, formats.y - 28, 400, 18}, 9.5f,
+                       Fade(theme::Text3, 0.9f), 0.10f, 500);
+        p_.TextWrap(L"MKV · MP4 · MOV · TS · WEBM · HEVC · H.264 · AV1 · VP9 · "
+                    L"FLAC · AAC · Opus · AC-3 · DTS · HDR",
+                    formats, 10.5f, theme::Text3, 400, FontFace::Text, 1.9f);
     }
 
     // -- recent panel
