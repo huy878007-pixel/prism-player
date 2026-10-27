@@ -5,6 +5,7 @@
 [![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%20%2F%2011-0078D4.svg)]()
 [![C++20](https://img.shields.io/badge/C%2B%2B-20-00599C.svg)]()
+[![Release](https://img.shields.io/github/v/release/huy878007-pixel/prism-player?sort=semver)](https://github.com/huy878007-pixel/prism-player/releases/latest)
 
 ![Prism Home](docs/img/home.png)
 
@@ -13,9 +14,20 @@ Prism 是一个用 **C++20 / Win32 / Direct2D / Direct3D 11** 从零写的本地
 双击即用，拖入即播，不联网、不上传、不转码。
 
 本仓库是**源码仓库**：不包含 FFmpeg 二进制、`_vendor/` 或 `dist/`（FFmpeg 的 `avcodec` 单个 DLL 就超过
-GitHub 普通文件限制）。构建方法见下方 [从源码构建](#从源码构建)。
+GitHub 普通文件限制）。预编译的 Windows x64 版本在 [Releases](https://github.com/huy878007-pixel/prism-player/releases/latest)；
+从源码构建见下方 [从源码构建](#从源码构建)。
 
 ---
+
+## 界面
+
+| | |
+|---|---|
+| ![Home](docs/img/home.png) | ![Player](docs/img/player.png) |
+| ![Settings](docs/img/settings.png) | ![Playback stats](docs/img/stats.png) |
+| ![Shortcut editor](docs/img/keys.png) | ![File browser](docs/img/files.png) |
+| ![Playlist](docs/img/playlist.png) | ![Subtitles](docs/img/subtitles.png) |
+| ![Subtitle style](docs/img/subtitle-style.png) | ![HDR10](docs/img/hdr.png) |
 
 ## 亮点
 
@@ -35,6 +47,14 @@ GitHub 普通文件限制）。构建方法见下方 [从源码构建](#从源�
 - **文件浏览器**：Prism 自绘，不再依赖会卡住的原生 Explorer 对话框；支持视频缩略图。
 - **设置与统计**：双栏设置、媒体/系统数据、`I` 播放统计浮层、图形化快捷键编辑器。
 - **文件图标**：29 种格式的圆形 Prism + 格式标签图标，可注册到当前用户。
+
+## 下载
+
+预编译 Windows x64 版本在 **[Releases](https://github.com/huy878007-pixel/prism-player/releases/latest)**。
+下载 `Prism-1.0.0-win64.zip`，解压后运行 `Prism\Prism.exe`，无需安装。
+
+Release 包内包含 FFmpeg 8.1 shared（GPLv3）和 libass 0.17.5（ISC）的运行时 DLL 与许可文件；
+Prism 自身以 AGPL-3.0-only 发布，源码与二进制对应的 tag 在同一 Release 页面提供。
 
 ## 从源码构建
 

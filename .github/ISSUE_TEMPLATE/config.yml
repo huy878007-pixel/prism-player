@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Download the latest Windows build
+    url: https://github.com/huy878007-pixel/prism-player/releases/latest
+    about: Prebuilt x64 zip with FFmpeg and libass runtime files.
+  - name: Build from source
+    url: https://github.com/huy878007-pixel/prism-player#从源码构建
+    about: Visual Studio 2022, CMake, Ninja, NASM, FFmpeg and libass setup.

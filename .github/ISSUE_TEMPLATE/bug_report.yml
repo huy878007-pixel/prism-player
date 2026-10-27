@@ -1,0 +1,62 @@
+name: Bug report
+description: Report a reproducible playback, UI or build problem
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for testing Prism. Please attach the last ~30 lines of `%LOCALAPPDATA%\Prism\prism.log`
+        and, for subtitle/audio issues, the exact track names.
+  - type: input
+    id: version
+    attributes:
+      label: Prism version
+      description: Release version or commit SHA
+      placeholder: "1.0.0 / 462c4f0"
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: Windows / GPU / display
+      placeholder: "Windows 11 26200, RTX 5060, 2560x1440 HDR"
+    validations:
+      required: true
+  - type: input
+    id: media
+    attributes:
+      label: Media
+      description: Container, video codec, HDR/SDR, audio tracks, subtitle tracks
+      placeholder: "MKV, HEVC 10-bit, HDR10, E-AC3 5.1 x2, ASS x3"
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Press ...
+        3. See ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected / actual
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Log excerpt
+      description: Last 30 lines of prism.log
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I reproduced this with the latest release or main branch.
+          required: true
+        - label: This is not a request for a new feature (use the feature template).
+          required: true
