@@ -51,7 +51,7 @@ GitHub 普通文件限制）。预编译的 Windows x64 版本在 [Releases](htt
 ## 下载
 
 预编译 Windows x64 版本在 **[Releases](https://github.com/huy878007-pixel/prism-player/releases/latest)**。
-下载 `Prism-1.0.0-win64.zip`，解压后运行 `Prism\Prism.exe`，无需安装。
+下载 `Prism-1.0.2-win64.zip`，解压后运行 `Prism\Prism.exe`，无需安装。
 
 Release 包内包含 FFmpeg 8.1 shared（GPLv3）和 libass 0.17.5（ISC）的运行时 DLL 与许可文件；
 Prism 自身以 AGPL-3.0-only 发布，源码与二进制对应的 tag 在同一 Release 页面提供。
