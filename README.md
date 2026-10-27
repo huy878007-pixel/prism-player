@@ -108,7 +108,8 @@ and install the per-format icons in HKCU.
 | `Alt+V` | 开启/关闭副字幕（第二条文本轨，显示在主字幕上方） |
 | `A` / `Shift+A` | 循环切换音轨（内嵌/外挂 MKA） |
 | `I` | 显示/关闭播放统计 |
-| `F1` / `F2` | 打开快捷键配置 / 重新加载 |
+| `F1` / `F2` | 打开图形化快捷键编辑器 / 重新加载 |
+| `Alt+V` | 副字幕开关 |
 
 ## 默认播放器与文件图标
 
@@ -130,9 +131,9 @@ and install the per-format icons in HKCU.
 
 ## 快捷键自定义
 
-首次运行会生成 `%LOCALAPPDATA%\Prism\keys.ini`，所有按键和动作都可以改，改完按 `F2` 生效或 `F1` 打开文件。
+首次运行会生成 `%LOCALAPPDATA%\Prism\keys.ini`。按 `F1` 打开 Prism 自绘的**图形化快捷键编辑器**：点击一行，再按下新的按键组合即可，修改即时写入 `keys.ini`；也可以按 `F2` 重载文件。
 
-默认配置里 `right = boost 3.0`：**按住右方向键 3× 播放，松开恢复原速**；`shift+right = seek 1`。
+默认 `right = seek_boost 3.0`：**短按右方向键 +5 秒，按住超过 0.32 秒进入 3× 播放，松开恢复原速**；`shift+right = seek 1`。
 支持的动作：`toggle play pause seek seek_start seek_end volume mute fullscreen speed boost next prev
 subtitle_toggle subtitle_next subtitle_prev subtitle_delay open keys reload_keys escape quit`。
 例如：

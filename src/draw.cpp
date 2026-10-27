@@ -1357,9 +1357,68 @@ void App::drawSettings() {
         p_.RoundStroke(r, 8.f, 1.f, hovered(id) ? theme::LineHi : theme::Line);
         p_.TextC(label, r, 10.5f, theme::Text2, 500);
     };
-    button({sx + 32, sy + 588, 220, 34}, L"默认应用 / 文件图标", kHitDefaultApps);
-    button({sx + 266, sy + 588, 140, 34}, L"打开日志", kHitOpenLog);
-    button({sx + 420, sy + 588, 140, 34}, showStats_ ? L"关闭统计" : L"播放统计", kHitStatsRow);
+    button({sx + 32, sy + 588, 170, 34}, L"默认应用 / 图标", kHitDefaultApps);
+    button({sx + 210, sy + 588, 130, 34}, L"快捷键…", kHitKeyEditor);
+    button({sx + 348, sy + 588, 120, 34}, L"打开日志", kHitOpenLog);
+    button({sx + 476, sy + 588, 120, 34}, showStats_ ? L"关闭统计" : L"播放统计", kHitStatsRow);
+}
+
+
+void App::drawKeyEditor() {
+    p_.Fill({0, 0, W_, H_}, Hex(0x000000, 0.62f));
+    RectF panel = rKeyPanel_;
+    p_.Round(panel, 20.f, Hex(0x0D1017, 0.99f));
+    p_.RoundStroke(panel, 20.f, 1.f, theme::LineHi);
+    p_.Text(L"快捷键", {panel.x + 32, panel.y + 18, 240, 30}, 19.f, theme::Text, 650, FontFace::Display);
+    p_.Text(keyCapturing_ ? L"按下新的按键组合…  Esc 取消" : L"点击一行，然后按下新的按键",
+            {panel.x + 34, panel.y + 50, panel.w - 80, 18}, 10.5f,
+            keyCapturing_ ? theme::Accent : theme::Text3, 400);
+    RectF closeR{panel.Right() - 52, panel.y + 16, 36, 36};
+    p_.Round(closeR, 9.f, hovered(kHitKeyClose) ? Hex(0xFFFFFF, 0.09f) : Hex(0xFFFFFF, 0.02f));
+    IconClose(p_, closeR, theme::Text3, 9.f);
+    p_.Fill({panel.x + 18, panel.y + 78, panel.w - 36, 1}, theme::Line);
+
+    const float top = panel.y + 96.f;
+    const float bottom = panel.Bottom() - 78.f;
+    p_.PushClip({panel.x + 12, top, panel.w - 24, bottom - top});
+    for (size_t i = 0; i < rKeyRows_.size(); ++i) {
+        const int idx = keyScroll_ + (int)i;
+        if (idx >= (int)keyBindings_.size()) break;
+        const RectF r = rKeyRows_[i];
+        const bool sel = idx == keySelected_;
+        const bool cap = sel && keyCapturing_;
+        if (cap) p_.Round(r, 8.f, Fade(theme::Accent, 0.16f));
+        else if (sel) p_.Round(r, 8.f, Hex(0xFFFFFF, 0.07f));
+        else if (hovered(kHitKeyRowBase + idx)) p_.Round(r, 8.f, Hex(0xFFFFFF, 0.04f));
+        if (sel) p_.Round({r.x, r.y + 7, 2.5f, r.h - 14}, 1.2f, theme::Accent);
+        const KeyBinding& b = keyBindings_[idx];
+        p_.Text(ActionLabel(b.action), {r.x + 16, r.y + 4, r.w - 210, 22}, 11.5f,
+                sel ? theme::Text : theme::Text2, 500);
+        std::wstring combo = cap ? L"按下按键…" : ComboText(b);
+        const float cw = p_.Measure(combo, 10.f, 500, FontFace::Mono);
+        RectF capR{r.Right() - cw - 30, r.y + 5, cw + 20, 20};
+        p_.Round(capR, 5.f, cap ? Fade(theme::Accent, 0.2f) : Hex(0xFFFFFF, 0.06f));
+        p_.RoundStroke(capR, 5.f, 1.f, cap ? Fade(theme::Accent, 0.6f) : theme::Line);
+        p_.TextC(combo, capR, 10.f, cap ? theme::Accent : theme::Text3, 500, FontFace::Mono);
+    }
+    p_.PopClip();
+
+    if (keyMaxScroll_ > 0) {
+        RectF track{panel.Right() - 18, top, 4, bottom - top};
+        p_.Round(track, 2.f, Hex(0xFFFFFF, 0.06f));
+        const float h = std::max(28.f, track.h * (float)keyVisibleRows_ / std::max(1, (int)keyBindings_.size()));
+        const float y = track.y + (track.h - h) * (float)keyScroll_ / std::max(1, keyMaxScroll_);
+        p_.Round({track.x, y, track.w, h}, 2.f, Fade(theme::Accent, 0.65f));
+    }
+
+    auto button = [&](RectF r, const wchar_t* label, int id) {
+        p_.Round(r, 8.f, hovered(id) ? Hex(0xFFFFFF, 0.08f) : Hex(0xFFFFFF, 0.035f));
+        p_.RoundStroke(r, 8.f, 1.f, hovered(id) ? theme::LineHi : theme::Line);
+        p_.TextC(label, r, 10.5f, theme::Text2, 500);
+    };
+    button({panel.x + 24, panel.Bottom() - 54, 124, 32}, L"恢复默认", kHitKeyReset);
+    button({panel.x + 158, panel.Bottom() - 54, 150, 32}, L"打开 keys.ini", kHitKeyFile);
+    p_.Text(L"即时写入 keys.ini", {panel.x + 326, panel.Bottom() - 47, 150, 18}, 9.f, theme::Text3, 400);
 }
 
 void App::drawStats() {

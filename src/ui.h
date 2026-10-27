@@ -12,7 +12,7 @@
 class AssRenderer;
 
 enum class Screen { Home, Player };
-enum class Popup { None, Settings, Playlist, Speed, Subtitles, SubtitleStyle, FontPicker, FileBrowser };
+enum class Popup { None, Settings, Playlist, Speed, Subtitles, SubtitleStyle, FontPicker, FileBrowser, KeyEditor };
 enum class FbMode { MediaFile, MediaFolder, Subtitle };
 
 enum {
@@ -74,6 +74,11 @@ enum {
     kHitDefaultApps = 423,
     kHitOpenLog = 424,
     kHitStatsRow = 425,
+    kHitKeyEditor = 426,
+    kHitKeyClose = 430,
+    kHitKeyReset = 431,
+    kHitKeyFile = 432,
+    kHitKeyRowBase = 12000,
     kHitBackdrop = 900,
     kHitFbClose = 500,
     kHitFbUp = 501,
@@ -115,6 +120,9 @@ struct KeyBinding {
     std::string action;
     float arg = 0.f;
 };
+
+std::wstring ComboText(const KeyBinding& b);
+std::wstring ActionLabel(const std::string& action);
 
 struct PlaylistItem {
     std::wstring path;
@@ -167,6 +175,7 @@ private:
     // layout
     void layout();
     void layoutFileBrowser();
+    void layoutKeyEditor();
     void addHit(int id, const RectF& r);
     int hitTest(float x, float y) const;
     bool hovered(int id) const { return hoverId_ == id; }
@@ -195,6 +204,7 @@ private:
     void drawSubtitleStyle();
     void drawFontPicker();
     void drawFileBrowser();
+    void drawKeyEditor();
 
     // interaction
     void onMouseMove(float x, float y);
@@ -206,6 +216,9 @@ private:
     void loadKeyBindings();
     bool runKeyAction(const KeyBinding& b);
     void openKeysFile();
+    void openKeyEditor();
+    void saveKeyBindings();
+    void resetKeyBindings();
     void activate(int id);
     void showToast(const std::wstring& text);
     void updateHover();
@@ -361,9 +374,21 @@ private:
     std::unordered_map<std::wstring, FbThumb> fbThumbs_;
     std::unordered_map<std::wstring, std::wstring> fbThumbMissing_;
     std::vector<KeyBinding> keyBindings_;
+    bool keyCapturing_ = false;
+    int keySelected_ = -1;
+    int keyScroll_ = 0;
+    int keyMaxScroll_ = 0;
+    int keyVisibleRows_ = 0;
+    RectF rKeyPanel_;
+    std::vector<RectF> rKeyRows_;
     bool speedBoostActive_ = false;
     int boostVk_ = 0;
     double speedBoostPrev_ = 1.0;
+    bool rightPending_ = false;
+    bool rightBoost_ = false;
+    double rightDownAt_ = 0.0;
+    double rightBoostSpeed_ = 3.0;
+    double rightPrevSpeed_ = 1.0;
     double autoNextAt_ = 0;
     float subX_ = 0.f, subY_ = 0.f;
     bool draggingSub_ = false;

@@ -184,9 +184,10 @@ void App::layout() {
         addHit(kHitExclusive, {sx + 230, sy + 454, 130, 40});
         addHit(kHitAudioTrack, {sx + 32, sy + 496, 360, 36});
         addHit(kHitSettingsSubStyle, {sx + 32, sy + 538, 360, 36});
-        addHit(kHitDefaultApps, {sx + 32, sy + 588, 220, 34});
-        addHit(kHitOpenLog, {sx + 266, sy + 588, 140, 34});
-        addHit(kHitStatsRow, {sx + 420, sy + 588, 140, 34});
+        addHit(kHitDefaultApps, {sx + 32, sy + 588, 170, 34});
+        addHit(kHitKeyEditor, {sx + 210, sy + 588, 130, 34});
+        addHit(kHitOpenLog, {sx + 348, sy + 588, 120, 34});
+        addHit(kHitStatsRow, {sx + 476, sy + 588, 120, 34});
     }
     if (screen_ == Screen::Home) {
         float panelW = std::clamp(W_ * 0.345f, 430.f, 620.f);
@@ -214,6 +215,7 @@ void App::layout() {
         addHit(kHitOpenFile, rOpen_);
         addHit(kHitOpenFolder, rFolder_);
         if (popup_ == Popup::FileBrowser) layoutFileBrowser();
+        if (popup_ == Popup::KeyEditor) layoutKeyEditor();
         return;
     }
 
@@ -372,6 +374,8 @@ void App::layout() {
             }
         } else if (popup_ == Popup::FileBrowser) {
             layoutFileBrowser();
+        } else if (popup_ == Popup::KeyEditor) {
+            layoutKeyEditor();
         }
     }
 }
@@ -682,6 +686,73 @@ int ParseKeyName(const std::string& raw) {
     return 0;
 }
 
+
+std::wstring KeyName(int vk) {
+    if (vk >= 'A' && vk <= 'Z') return std::wstring(1, (wchar_t)vk);
+    if (vk >= '0' && vk <= '9') return std::wstring(1, (wchar_t)vk);
+    if (vk >= VK_F1 && vk <= VK_F24) return L"F" + std::to_wstring(vk - VK_F1 + 1);
+    switch (vk) {
+        case VK_SPACE: return L"Space";
+        case VK_RETURN: return L"Enter";
+        case VK_ESCAPE: return L"Esc";
+        case VK_TAB: return L"Tab";
+        case VK_BACK: return L"Backspace";
+        case VK_INSERT: return L"Insert";
+        case VK_DELETE: return L"Delete";
+        case VK_HOME: return L"Home";
+        case VK_END: return L"End";
+        case VK_PRIOR: return L"PgUp";
+        case VK_NEXT: return L"PgDn";
+        case VK_UP: return L"Up";
+        case VK_DOWN: return L"Down";
+        case VK_LEFT: return L"Left";
+        case VK_RIGHT: return L"Right";
+        case VK_OEM_PLUS: return L"+";
+        case VK_OEM_MINUS: return L"-";
+        case VK_OEM_COMMA: return L",";
+        case VK_OEM_PERIOD: return L".";
+        case VK_OEM_2: return L"/";
+        case VK_OEM_5: return L"\\";
+        case VK_OEM_1: return L";";
+        case VK_OEM_7: return L"'";
+        case VK_OEM_4: return L"[";
+        case VK_OEM_6: return L"]";
+        case VK_OEM_3: return L"`";
+        default: {
+            wchar_t b[24];
+            swprintf_s(b, L"VK%02X", vk);
+            return b;
+        }
+    }
+}
+
+std::wstring ComboText(const KeyBinding& b) {
+    std::wstring s;
+    if (b.ctrl) s += L"Ctrl+";
+    if (b.shift) s += L"Shift+";
+    if (b.alt) s += L"Alt+";
+    s += KeyName(b.vk);
+    return s;
+}
+
+std::wstring ActionLabel(const std::string& a) {
+    static const std::pair<const char*, const wchar_t*> map[] = {
+        {"toggle", L"播放 / 暂停"}, {"play", L"播放"}, {"pause", L"暂停"},
+        {"seek", L"快进 / 后退"}, {"seek_start", L"跳到开头"}, {"seek_end", L"跳到结尾"},
+        {"seek_boost", L"右方向键：短按 +5s / 长按倍速"}, {"boost", L"按住倍速"},
+        {"volume", L"音量"}, {"mute", L"静音"}, {"fullscreen", L"全屏"},
+        {"speed", L"播放速度"}, {"next", L"下一集"}, {"prev", L"上一集"},
+        {"subtitle_toggle", L"开关字幕"}, {"subtitle_next", L"下一条字幕"},
+        {"subtitle_prev", L"上一条字幕"}, {"subtitle_delay", L"字幕延迟"},
+        {"subtitle_secondary", L"副字幕开关"}, {"audio_next", L"切换音轨"},
+        {"open", L"打开文件"}, {"keys", L"快捷键设置"}, {"reload_keys", L"重载快捷键"},
+        {"escape", L"退出全屏 / 关闭面板"}, {"quit", L"退出播放器"}, {"stats", L"播放统计"},
+    };
+    for (const auto& p : map)
+        if (a == p.first) return p.second;
+    return Widen(a);
+}
+
 const char* DefaultKeysText() {
     return "# Prism key bindings. Edit this file, then press F2 in Prism.\n"
            "# format: [ctrl+][shift+][alt+]key = action [arg]\n"
@@ -690,7 +761,7 @@ const char* DefaultKeysText() {
            "#          subtitle_delay open keys reload_keys escape quit\n"
            "space = toggle\n"
            "left = seek -5\n"
-           "right = boost 3.0\n"
+           "right = seek_boost 3.0\n"
            "shift+left = seek -1\n"
            "shift+right = seek 1\n"
            "up = volume 0.05\n"
@@ -761,6 +832,8 @@ void App::loadKeyBindings() {
         size_t sp = rhs.find_first_of(" \t");
         b.action = LowerA(sp == std::string::npos ? rhs : rhs.substr(0, sp));
         if (sp != std::string::npos) b.arg = (float)atof(rhs.c_str() + sp + 1);
+        // Migrate the old default (right = boost) to the tap/hold gesture.
+        if (b.action == "boost" && b.vk == VK_RIGHT) b.action = "seek_boost";
         keyBindings_.push_back(b);
     }
     Log("keys: loaded %zu bindings from %s", keyBindings_.size(), Narrow(path).c_str());
@@ -784,6 +857,11 @@ bool App::runKeyAction(const KeyBinding& b) {
     else if (a == "speed") {
         engine_.setSpeed(std::clamp(engine_.speed() + b.arg, 0.25, 4.0));
         showToast(L"\\u901f\\u5ea6 " + std::to_wstring((int)std::lround(engine_.speed() * 100)) + L"%");
+    } else if (a == "seek_boost") {
+        if (rightPending_ || rightBoost_) return true;
+        rightPending_ = true;
+        rightDownAt_ = now_;
+        rightBoostSpeed_ = b.arg > 0.0f ? std::clamp((double)b.arg, 0.25, 4.0) : 3.0;
     } else if (a == "boost") {
         if (!speedBoostActive_) {
             speedBoostPrev_ = engine_.speed();
@@ -828,7 +906,7 @@ bool App::runKeyAction(const KeyBinding& b) {
         showStats_ = !showStats_;
         dirty_ = true;
     } else if (a == "open") openDialog(false);
-    else if (a == "keys") openKeysFile();
+    else if (a == "keys") openKeyEditor();
     else if (a == "reload_keys") {
         loadKeyBindings();
         showToast(L"\\u5feb\\u6377\\u952e\\u5df2\\u91cd\\u8f7d");
@@ -853,8 +931,56 @@ void App::openKeysFile() {
     ShellExecuteW(nullptr, L"open", path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 }
 
+
+void App::openKeyEditor() {
+    popup_ = Popup::KeyEditor;
+    keyCapturing_ = false;
+    keySelected_ = -1;
+    keyScroll_ = 0;
+    dirty_ = true;
+}
+
+void App::saveKeyBindings() {
+    std::string out =
+        "# Prism key bindings. Edit this file, or use F1 in the app.\n"
+        "# format: [ctrl+][shift+][alt+]key = action [arg]\n";
+    char buf[512];
+    for (const auto& b : keyBindings_) {
+        std::wstring combo = ComboText(b);
+        out += Narrow(combo);
+        out += " = ";
+        out += b.action;
+        if (std::fabs(b.arg) > 0.0001f) {
+            snprintf(buf, sizeof(buf), " %.2f", b.arg);
+            out += buf;
+        }
+        out += "\n";
+    }
+    WriteTextFile(DataDir() + L"\\keys.ini", out);
+}
+
+void App::resetKeyBindings() {
+    WriteTextFile(DataDir() + L"\\keys.ini", DefaultKeysText());
+    loadKeyBindings();
+    keyCapturing_ = false;
+    keySelected_ = -1;
+    keyScroll_ = 0;
+    showToast(L"快捷键已恢复默认");
+    dirty_ = true;
+}
+
 void App::onKeyUp(int vk, bool ctrl, bool shift, bool alt) {
     (void)ctrl; (void)shift; (void)alt;
+    if (vk == VK_RIGHT && rightPending_) {
+        rightPending_ = false;
+        seekBy(5.0);
+        showToast(L"→ 5 秒");
+    }
+    if (vk == VK_RIGHT && rightBoost_) {
+        engine_.setSpeed(std::clamp(rightPrevSpeed_, 0.25, 4.0));
+        rightBoost_ = false;
+        Log("keys: right hold end %.2f", engine_.speed());
+    }
     if (speedBoostActive_ && vk == boostVk_) {
         engine_.setSpeed(std::clamp(speedBoostPrev_, 0.25, 4.0));
         speedBoostActive_ = false;
@@ -1536,6 +1662,28 @@ void App::headlessSetSecondary(int ordinal) {
     }
 }
 
+
+void App::layoutKeyEditor() {
+    rKeyPanel_ = {W_ * 0.5f - 320.f, H_ * 0.5f - 300.f, 640.f, 600.f};
+    rKeyRows_.clear();
+    const float top = rKeyPanel_.y + 96.f;
+    const float bottom = rKeyPanel_.Bottom() - 78.f;
+    keyVisibleRows_ = std::max(1, (int)((bottom - top) / 32.f));
+    keyMaxScroll_ = std::max(0, (int)keyBindings_.size() - keyVisibleRows_);
+    keyScroll_ = std::clamp(keyScroll_, 0, keyMaxScroll_);
+    keySelected_ = std::clamp(keySelected_, -1, (int)keyBindings_.size() - 1);
+    addHit(kHitKeyClose, {rKeyPanel_.Right() - 52, rKeyPanel_.y + 16, 36, 36});
+    addHit(kHitKeyReset, {rKeyPanel_.x + 24, rKeyPanel_.Bottom() - 54, 124, 32});
+    addHit(kHitKeyFile, {rKeyPanel_.x + 158, rKeyPanel_.Bottom() - 54, 150, 32});
+    for (int i = 0; i < keyVisibleRows_; ++i) {
+        const int idx = keyScroll_ + i;
+        if (idx >= (int)keyBindings_.size()) break;
+        RectF r{rKeyPanel_.x + 18, top + i * 32.f, rKeyPanel_.w - 36, 30};
+        rKeyRows_.push_back(r);
+        addHit(kHitKeyRowBase + idx, r);
+    }
+}
+
 void App::updateSystemStats() {
     if (now_ - lastCpuSample_ < 1.0 && systemStatsInit_) return;
     PROCESS_MEMORY_COUNTERS_EX pmc{};
@@ -1569,6 +1717,14 @@ void App::tick(double now, double dt) {
     updateSystemStats();
 
     if (hasMedia_) {
+        if (rightPending_ && !rightBoost_ && now_ - rightDownAt_ >= 0.32) {
+            rightPending_ = false;
+            rightBoost_ = true;
+            rightPrevSpeed_ = engine_.speed();
+            engine_.setSpeed(rightBoostSpeed_);
+            showToast(std::to_wstring((int)std::lround(rightBoostSpeed_ * 100)) + L"% 快进");
+            Log("keys: right hold boost %.2f", rightBoostSpeed_);
+        }
         if (!headless_ && !watchDir_.empty() && now_ - lastWatchScan_ > 0.8) {
             lastWatchScan_ = now_;
             pollFolder();
@@ -1706,6 +1862,7 @@ void App::render(double now) {
     }
     // The file browser works over both screens, so it is not part of drawPlayer.
     if (popup_ == Popup::FileBrowser) drawFileBrowser();
+    if (popup_ == Popup::KeyEditor) drawKeyEditor();
     if (showStats_) drawStats();
     drawToast();
     gfx_->endFrame();
@@ -1830,6 +1987,10 @@ void App::onMouseWheel(float delta) {
         fontScroll_ = std::clamp(fontScroll_ + (delta > 0 ? -3 : 3), 0, fontMaxScroll_);
         return;
     }
+    if (popup_ == Popup::KeyEditor) {
+        keyScroll_ = std::clamp(keyScroll_ + (delta > 0 ? -3 : 3), 0, keyMaxScroll_);
+        return;
+    }
     if (!hasMedia_) return;
     setVolume(volume_ + (delta > 0 ? 0.04f : -0.04f));
     showToast(L"音量 " + std::to_wstring((int)std::lround(volume_ * 100)) + L"%");
@@ -1844,6 +2005,37 @@ void App::onKeyDown(int vk, bool ctrl, bool shift) {
         return;
     }
     bool alt = (GetKeyState(VK_MENU) & 0x8000) != 0;
+    if (popup_ == Popup::KeyEditor) {
+        if (keyCapturing_) {
+            if (vk == VK_ESCAPE) { keyCapturing_ = false; dirty_ = true; return; }
+            if (vk == VK_CONTROL || vk == VK_SHIFT || vk == VK_MENU || vk == VK_LWIN || vk == VK_RWIN ||
+                vk == VK_CAPITAL) return;
+            if (keySelected_ >= 0 && keySelected_ < (int)keyBindings_.size()) {
+                KeyBinding& b = keyBindings_[keySelected_];
+                KeyBinding next = b;
+                next.vk = vk; next.ctrl = ctrl; next.shift = shift; next.alt = alt;
+                for (size_t i = 0; i < keyBindings_.size(); ++i) {
+                    if ((int)i == keySelected_) continue;
+                    KeyBinding& o = keyBindings_[i];
+                    if (o.vk == next.vk && o.ctrl == next.ctrl && o.shift == next.shift && o.alt == next.alt) {
+                        o.vk = b.vk; o.ctrl = b.ctrl; o.shift = b.shift; o.alt = b.alt;
+                        break;
+                    }
+                }
+                b = next;
+                keyCapturing_ = false;
+                saveKeyBindings();
+                showToast(L"已绑定 " + ComboText(b));
+            }
+            dirty_ = true;
+            return;
+        }
+        if (vk == VK_ESCAPE) { popup_ = Popup::None; dirty_ = true; return; }
+        if (vk == VK_UP && !keyBindings_.empty()) { keySelected_ = std::max(0, keySelected_ - 1); dirty_ = true; return; }
+        if (vk == VK_DOWN && !keyBindings_.empty()) { keySelected_ = std::min((int)keyBindings_.size() - 1, keySelected_ + 1); dirty_ = true; return; }
+        if (vk == VK_RETURN && keySelected_ >= 0) { keyCapturing_ = true; dirty_ = true; return; }
+        return;
+    }
     for (const auto& b : keyBindings_) {
         if (b.vk == vk && b.ctrl == ctrl && b.shift == shift && b.alt == alt) {
             runKeyAction(b);
@@ -1938,6 +2130,15 @@ void App::activate(int id) {
     if (popup_ == Popup::FileBrowser && id >= kHitFbDriveBase && id < kHitFbDriveBase + 32) {
         const int idx = id - kHitFbDriveBase;
         if (idx >= 0 && idx < (int)fbDrives_.size()) fbNavigate(fbDrives_[idx]);
+        return;
+    }
+    if (id >= kHitKeyRowBase) {
+        const int idx = id - kHitKeyRowBase;
+        if (idx >= 0 && idx < (int)keyBindings_.size()) {
+            keySelected_ = idx;
+            keyCapturing_ = true;
+            dirty_ = true;
+        }
         return;
     }
     if (id >= kHitFontRowBase) {
@@ -2133,6 +2334,10 @@ void App::activate(int id) {
             showStats_ = !showStats_;
             if (showStats_) popup_ = Popup::None;
             break;
+        case kHitKeyEditor: openKeyEditor(); break;
+        case kHitKeyClose: popup_ = Popup::None; break;
+        case kHitKeyReset: resetKeyBindings(); break;
+        case kHitKeyFile: openKeysFile(); break;
         case kHitDefaultApps: {
             std::wstring script = AppDir() + L"\\RegisterFileTypes.ps1";
             std::error_code ec;
@@ -2243,6 +2448,11 @@ bool App::handleMessage(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp, LRESULT& out)
             return true;
         }
         case WM_KILLFOCUS:
+            rightPending_ = false;
+            if (rightBoost_) {
+                engine_.setSpeed(std::clamp(rightPrevSpeed_, 0.25, 4.0));
+                rightBoost_ = false;
+            }
             if (speedBoostActive_) {
                 engine_.setSpeed(std::clamp(speedBoostPrev_, 0.25, 4.0));
                 speedBoostActive_ = false;
@@ -2336,6 +2546,7 @@ void App::headlessSetPopup(int popup) {
         openSubtitleDialog();
         return;
     }
+    if (popup == 9) { openKeyEditor(); return; }
     if (popup >= 1 && popup <= (int)Popup::FileBrowser) popup_ = (Popup)popup;
 }
 

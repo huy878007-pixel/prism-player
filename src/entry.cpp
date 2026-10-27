@@ -304,6 +304,7 @@ int RunHeadless(const Options& o) {
         else if (o.popup == L"font") popup = 6;
         else if (o.popup == L"files") popup = 7;
         else if (o.popup == L"subfiles") popup = 8;
+        else if (o.popup == L"keys") popup = 9;
         if (popup) app.headlessSetPopup(popup);
         if (o.stats) app.headlessShowStats();
         if (o.secondary >= 0) app.headlessSetSecondary(o.secondary);
