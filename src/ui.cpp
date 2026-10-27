@@ -707,6 +707,7 @@ const char* DefaultKeysText() {
            "minus = speed -0.25\n"
            "a = audio_next\n"
            "shift+a = audio_prev\n"
+           "alt+v = subtitle_secondary\n"
            "v = subtitle_next\n"
            "shift+v = subtitle_prev\n"
            "c = subtitle_toggle\n"
@@ -808,6 +809,8 @@ bool App::runKeyAction(const KeyBinding& b) {
         subtitleText_.clear();
         subtitleTrack_ = engine_.subtitleTrack();
         showToast(L"\\u5b57\\u5e55\\uff1a" + engine_.subtitleName());
+    } else if (a == "subtitle_secondary") {
+        toggleSecondarySubtitle();
     } else if (a == "subtitle_delay") {
         subtitleDelay_ = std::clamp(subtitleDelay_ + b.arg, -10.f, 10.f);
         subtitleText_ = engine_.subtitleAt(position_ - subtitleDelay_);
@@ -884,6 +887,9 @@ bool App::openPath(const std::wstring& path, bool autoplay, double resumeAt) {
         return false;
     }
     hasMedia_ = true;
+    secondaryEnabled_ = false;
+    secondaryText_.clear();
+    secondaryOrdinal_ = -1;
     if (engine_.externalAudio())
         showToast(L"已加载外部音轨：" + FileNameOf(engine_.externalAudioPath()));
     if (engine_.subtitleBackend() == SubtitleBackend::Ass) ensureAssRenderer();
@@ -1012,6 +1018,9 @@ void App::closeMedia() {
     gfx_->clearSubtitle();
     assData_.reset();
     hasMedia_ = false;
+    secondaryEnabled_ = false;
+    secondaryText_.clear();
+    secondaryOrdinal_ = -1;
     playing_ = false;
     subtitleEnabled_ = false;
     subtitleText_.clear();
@@ -1486,6 +1495,47 @@ void App::refreshFolderPlaylist() {
 }
 
 
+
+void App::toggleSecondarySubtitle() {
+    if (!hasMedia_) return;
+    if (secondaryEnabled_) {
+        secondaryEnabled_ = false;
+        secondaryText_.clear();
+        engine_.clearSecondarySubtitle();
+        showToast(L"副字幕已关闭");
+        dirty_ = true;
+        return;
+    }
+    const int n = (int)engine_.info().subtitles.size();
+    if (n < 2) {
+        showToast(L"没有第二条字幕轨");
+        return;
+    }
+    int start = engine_.subtitleTrack();
+    if (start < 0) start = 0;
+    for (int k = 1; k <= n; ++k) {
+        int ord = (start + k) % n;
+        if (ord == engine_.subtitleTrack()) continue;
+        if (engine_.loadSecondarySubtitle(ord)) {
+            secondaryEnabled_ = true;
+            secondaryOrdinal_ = ord;
+            secondaryText_ = engine_.subtitleAtSecondary(std::max(0.0, position_ - subtitleDelay_));
+            showToast(L"副字幕：" + engine_.secondarySubtitleName());
+            dirty_ = true;
+            return;
+        }
+    }
+    showToast(L"没有可用的纯文本副字幕");
+}
+
+void App::headlessSetSecondary(int ordinal) {
+    if (engine_.loadSecondarySubtitle(ordinal)) {
+        secondaryEnabled_ = true;
+        secondaryOrdinal_ = ordinal;
+        secondaryText_ = engine_.subtitleAtSecondary(engine_.position());
+    }
+}
+
 void App::updateSystemStats() {
     if (now_ - lastCpuSample_ < 1.0 && systemStatsInit_) return;
     PROCESS_MEMORY_COUNTERS_EX pmc{};
@@ -1575,6 +1625,10 @@ void App::tick(double now, double dt) {
             double subTime = (draggingSeek_ ? dragSeekTime_ : position_) - subtitleDelay_;
             std::wstring next = engine_.subtitleAt(subTime);
             if (next != subtitleText_) { subtitleText_ = next; dirty_ = true; }
+            if (secondaryEnabled_) {
+                std::wstring next2 = engine_.subtitleAtSecondary(subTime);
+                if (next2 != secondaryText_) { secondaryText_ = next2; dirty_ = true; }
+            }
         } else if (!subtitleText_.empty()) {
             subtitleText_.clear();
         }
@@ -1795,6 +1849,10 @@ void App::onKeyDown(int vk, bool ctrl, bool shift) {
             runKeyAction(b);
             return;
         }
+    }
+    if (alt && (vk == 'V' || vk == 'v')) {
+        toggleSecondarySubtitle();
+        return;
     }
     if (!ctrl && (vk == 'I' || vk == 'i')) {
         showStats_ = !showStats_;

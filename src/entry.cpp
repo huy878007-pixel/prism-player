@@ -222,6 +222,7 @@ struct Options {
     std::wstring initialMedia;
     std::wstring subMode;
     bool stats = false;
+    int secondary = -1;
     double time = 0;
     int width = 1440;
     int height = 900;
@@ -239,6 +240,7 @@ bool ParseArgs(int argc, wchar_t** argv, Options& o) {
         else if (a == L"--media") next(o.media);
         else if (a == L"--popup") next(o.popup);
         else if (a == L"--stats") o.stats = true;
+        else if (a == L"--secondary") { std::wstring v; next(v); o.secondary = _wtoi(v.c_str()); }
         else if (a == L"--playlist") next(o.playlistDir);
         else if (a == L"--sub-mode") next(o.subMode);
         else if (a == L"--time") {
@@ -304,6 +306,7 @@ int RunHeadless(const Options& o) {
         else if (o.popup == L"subfiles") popup = 8;
         if (popup) app.headlessSetPopup(popup);
         if (o.stats) app.headlessShowStats();
+        if (o.secondary >= 0) app.headlessSetSecondary(o.secondary);
         app.headlessWarmThumbnails();
         app.render(QpcSeconds());
         std::filesystem::path outPath(o.render);

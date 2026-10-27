@@ -156,6 +156,12 @@ public:
     VideoFrame* acquireFrame();
     bool hasSubtitles() const;
     std::wstring subtitleAt(double t) const;
+    bool loadSecondarySubtitle(int ordinal);
+    void clearSecondarySubtitle();
+    bool hasSecondarySubtitle() const;
+    std::wstring subtitleAtSecondary(double t) const;
+    int secondarySubtitleTrack() const;
+    std::wstring secondarySubtitleName() const;
     int subtitleTrack() const;
     SubtitleBackend subtitleBackend() const;
     std::shared_ptr<const AssTrackData> assTrack() const;
@@ -291,6 +297,8 @@ private:
     std::atomic<double> lastPushQpc_{0.0};
 
     std::vector<SubtitleCue> subtitleCues_;
+    std::vector<SubtitleCue> subtitleCues2_;
+    int secondaryTrack_ = -1;
     std::shared_ptr<const AssTrackData> assTrack_;
     int subtitleTrack_ = -1;
     std::thread subtitleThread_;

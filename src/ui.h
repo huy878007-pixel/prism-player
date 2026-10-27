@@ -132,6 +132,8 @@ public:
     void resize(int width, int height);
     void tick(double now, double dt);
     void updateSystemStats();
+    void toggleSecondarySubtitle();
+    void headlessSetSecondary(int ordinal);
     void pollFolder();
     void refreshFolderPlaylist();
     void render(double now);
@@ -188,6 +190,7 @@ private:
     void drawWindowButtons();
     void drawSubtitle();
     void drawAssSubtitle();
+    void drawSecondarySubtitle();
     void drawSubtitleMenu();
     void drawSubtitleStyle();
     void drawFontPicker();
@@ -306,6 +309,9 @@ private:
     float volumeBeforeMute_ = 1.f;
     int subtitleTrack_ = -1;
     bool subtitleEnabled_ = false;
+    bool secondaryEnabled_ = false;
+    int secondaryOrdinal_ = -1;
+    std::wstring secondaryText_;
     std::wstring subtitleText_;
     int subtitleMode_ = 0;  // 0 auto, 1 original styles (native ASS), 2 custom plain text
     int subtitleModeSaved_ = 0;  // persisted default; CLI test overrides must not stick

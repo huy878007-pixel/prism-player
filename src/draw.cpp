@@ -570,6 +570,7 @@ void App::drawPlayer() {
     }
 
     drawSubtitle();
+    if (hasMedia_) drawSecondarySubtitle();
 
     if (controlsAlpha_ > 0.01f && hasMedia_) {
         p_.PushOpacity(controlsAlpha_);
@@ -773,6 +774,25 @@ void App::drawAssSubtitle() {
     dest.x += subX_ * W_;
     dest.y += subY_ * H_;
     p_.Bitmap(gfx_->subtitleBitmap(), dest, 1.f, 0.f, D2D1_INTERPOLATION_MODE_LINEAR);
+}
+
+
+void App::drawSecondarySubtitle() {
+    if (!secondaryEnabled_ || secondaryText_.empty() || popup_ != Popup::None) return;
+    const float scale = std::clamp(subtitleScale_, 0.5f, 2.5f);
+    const float size = 16.f * scale;
+    const float primaryBottom = H_ - (112.f + subtitlePos_ * 72.f) + subY_ * H_;
+    const float bottom = primaryBottom - 38.f * scale;
+    RectF area{W_ * 0.10f, bottom - 120.f, W_ * 0.80f, 120.f};
+    const float ow = std::max(1.5f, size * 0.055f);
+    for (int i = 0; i < 8; ++i) {
+        const float a = (float)i * 0.7853982f;
+        p_.TextCore(secondaryText_, area.Offset(std::cos(a) * ow, std::sin(a) * ow), size,
+                    Hex(0x000000, 0.86f), 500, FontFace::Custom, DWRITE_TEXT_ALIGNMENT_CENTER,
+                    DWRITE_PARAGRAPH_ALIGNMENT_FAR, true, 0.f, 1.30f, false);
+    }
+    p_.TextCore(secondaryText_, area, size, Hex(0xF3F5FA, 0.82f), 500, FontFace::Custom,
+                DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_FAR, true, 0.f, 1.30f, false);
 }
 
 void App::drawSubtitleMenu() {

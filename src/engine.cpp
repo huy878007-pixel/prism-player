@@ -388,6 +388,8 @@ bool Engine::open(const std::wstring& path, std::string& error, bool enableAudio
     {
         std::lock_guard<std::mutex> lk(subtitleMu_);
         subtitleCues_.clear();
+        subtitleCues2_.clear();
+        secondaryTrack_ = -1;
         assTrack_.reset();
         subtitleTrack_ = -1;
         subtitleJob_ = SubtitleJob{};
@@ -761,6 +763,8 @@ void Engine::close() {
     {
         std::lock_guard<std::mutex> lk(subtitleMu_);
         subtitleCues_.clear();
+        subtitleCues2_.clear();
+        secondaryTrack_ = -1;
         assTrack_.reset();
         subtitleTrack_ = -1;
         subtitleJob_ = SubtitleJob{};
@@ -2007,6 +2011,57 @@ std::wstring Engine::subtitleAt(double t) const {
         if (t >= it->start && t < it->end) return it->text;
     }
     return {};
+}
+
+
+bool Engine::loadSecondarySubtitle(int ordinal) {
+    if (ordinal < 0 || ordinal >= (int)info_.subtitles.size()) return false;
+    SubtitleJob job;
+    if (!makeSubtitleJob(ordinal, job)) return false;
+    if (job.track.backend == SubtitleBackend::Pgs) return false;
+    SubtitleDecodeResult result = decodeSubtitleTrack(job, nullptr);
+    if (!result.opened || result.cues.empty()) return false;
+    {
+        std::lock_guard<std::mutex> lk(subtitleMu_);
+        subtitleCues2_ = std::move(result.cues);
+        secondaryTrack_ = ordinal;
+    }
+    Log("subtitles: secondary %d (%s) %zu cues", ordinal, job.track.codec.c_str(), subtitleCues2_.size());
+    return true;
+}
+
+void Engine::clearSecondarySubtitle() {
+    std::lock_guard<std::mutex> lk(subtitleMu_);
+    subtitleCues2_.clear();
+    secondaryTrack_ = -1;
+}
+
+bool Engine::hasSecondarySubtitle() const {
+    std::lock_guard<std::mutex> lk(subtitleMu_);
+    return secondaryTrack_ >= 0 && !subtitleCues2_.empty();
+}
+
+std::wstring Engine::subtitleAtSecondary(double t) const {
+    std::lock_guard<std::mutex> lk(subtitleMu_);
+    if (subtitleCues2_.empty()) return {};
+    auto it = std::upper_bound(subtitleCues2_.begin(), subtitleCues2_.end(), t,
+                               [](double value, const SubtitleCue& cue) { return value < cue.start; });
+    while (it != subtitleCues2_.begin()) {
+        --it;
+        if (t >= it->start && t < it->end) return it->text;
+    }
+    return {};
+}
+
+int Engine::secondarySubtitleTrack() const {
+    std::lock_guard<std::mutex> lk(subtitleMu_);
+    return secondaryTrack_;
+}
+
+std::wstring Engine::secondarySubtitleName() const {
+    std::lock_guard<std::mutex> lk(subtitleMu_);
+    if (secondaryTrack_ < 0 || secondaryTrack_ >= (int)info_.subtitles.size()) return {};
+    return info_.subtitles[secondaryTrack_].title;
 }
 
 bool Engine::warmup(double seconds) {
