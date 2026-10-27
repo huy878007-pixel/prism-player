@@ -2,6 +2,13 @@
 
 #include <shobjidl.h>
 
+extern "C" {
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavutil/imgutils.h>
+#include <libswscale/swscale.h>
+}
+
 namespace {
 
 constexpr int kThumbW = 160;
@@ -96,7 +103,8 @@ std::shared_ptr<const std::vector<uint8_t>> BitmapToBgra(HBITMAP hbmp, int& widt
     return std::make_shared<const std::vector<uint8_t>>(std::move(px));
 }
 
-std::shared_ptr<const std::vector<uint8_t>> LoadShellImage(const std::wstring& path, int& width, int& height) {
+std::shared_ptr<const std::vector<uint8_t>> LoadShellImage(const std::wstring& path, int& width, int& height,
+                                                           bool allowIcon = true) {
     ComPtr<IShellItem> item;
     if (FAILED(SHCreateItemFromParsingName(path.c_str(), nullptr, IID_PPV_ARGS(&item))) || !item) return nullptr;
     ComPtr<IShellItemImageFactory> factory;
@@ -104,7 +112,9 @@ std::shared_ptr<const std::vector<uint8_t>> LoadShellImage(const std::wstring& p
 
     SIZE size{kThumbW, kThumbH};
     const SIIGBF modes[] = {(SIIGBF)(SIIGBF_BIGGERSIZEOK | SIIGBF_THUMBNAILONLY), SIIGBF_ICONONLY};
-    for (SIIGBF mode : modes) {
+    const int modeCount = allowIcon ? 2 : 1;
+    for (int modeIndex = 0; modeIndex < modeCount; ++modeIndex) {
+        SIIGBF mode = modes[modeIndex];
         HBITMAP hbmp = nullptr;
         HRESULT hr = factory->GetImage(size, mode, &hbmp);
         if (FAILED(hr) || !hbmp) {
@@ -116,6 +126,80 @@ std::shared_ptr<const std::vector<uint8_t>> LoadShellImage(const std::wstring& p
         if (bgra) return bgra;
     }
     return nullptr;
+}
+
+
+std::shared_ptr<const std::vector<uint8_t>> LoadFfmpegImage(const std::wstring& path, int& width, int& height) {
+    AVFormatContext* fmt = nullptr;
+    if (avformat_open_input(&fmt, Narrow(path).c_str(), nullptr, nullptr) < 0 || !fmt) return nullptr;
+    if (avformat_find_stream_info(fmt, nullptr) < 0) {
+        avformat_close_input(&fmt);
+        return nullptr;
+    }
+    int idx = av_find_best_stream(fmt, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
+    if (idx < 0) {
+        avformat_close_input(&fmt);
+        return nullptr;
+    }
+    AVStream* st = fmt->streams[idx];
+    const AVCodec* codec = avcodec_find_decoder(st->codecpar->codec_id);
+    AVCodecContext* ctx = codec ? avcodec_alloc_context3(codec) : nullptr;
+    if (!ctx || avcodec_parameters_to_context(ctx, st->codecpar) < 0 || avcodec_open2(ctx, codec, nullptr) < 0) {
+        if (ctx) avcodec_free_context(&ctx);
+        avformat_close_input(&fmt);
+        return nullptr;
+    }
+    // Pick a representative frame instead of a potentially black first frame.
+    int64_t ts = av_rescale_q(AV_TIME_BASE, AV_TIME_BASE_Q, st->time_base);
+    av_seek_frame(fmt, idx, ts, AVSEEK_FLAG_BACKWARD);
+
+    AVPacket* pkt = av_packet_alloc();
+    AVFrame* frame = av_frame_alloc();
+    bool got = false;
+    if (pkt && frame) {
+        for (int i = 0; i < 240; ++i) {
+            int r = av_read_frame(fmt, pkt);
+            if (r == AVERROR_EOF) break;
+            if (r < 0) continue;
+            if (pkt->stream_index != idx) {
+                av_packet_unref(pkt);
+                continue;
+            }
+            if (avcodec_send_packet(ctx, pkt) >= 0) {
+                if (avcodec_receive_frame(ctx, frame) >= 0) {
+                    got = true;
+                    av_packet_unref(pkt);
+                    break;
+                }
+            }
+            av_packet_unref(pkt);
+        }
+        if (!got) {
+            avcodec_send_packet(ctx, nullptr);
+            got = avcodec_receive_frame(ctx, frame) >= 0;
+        }
+    }
+    std::shared_ptr<const std::vector<uint8_t>> out;
+    if (got && frame->width > 0 && frame->height > 0) {
+        SwsContext* sws = sws_getContext(frame->width, frame->height, (AVPixelFormat)frame->format,
+                                         kThumbW, kThumbH, AV_PIX_FMT_BGRA, SWS_BILINEAR, nullptr, nullptr, nullptr);
+        if (sws) {
+            std::vector<uint8_t> px((size_t)kThumbW * kThumbH * 4, 255);
+            uint8_t* dst[4] = {px.data(), nullptr, nullptr, nullptr};
+            int dstStride[4] = {kThumbW * 4, 0, 0, 0};
+            sws_scale(sws, frame->data, frame->linesize, 0, frame->height, dst, dstStride);
+            for (size_t i = 3; i < px.size(); i += 4) px[i] = 255;
+            width = kThumbW;
+            height = kThumbH;
+            out = std::make_shared<const std::vector<uint8_t>>(std::move(px));
+            sws_freeContext(sws);
+        }
+    }
+    if (pkt) av_packet_free(&pkt);
+    if (frame) av_frame_free(&frame);
+    avcodec_free_context(&ctx);
+    avformat_close_input(&fmt);
+    return out;
 }
 
 }  // namespace
@@ -162,7 +246,9 @@ void ThumbnailCache::worker() {
             }
         }
         if (!cached) {
-            bgra = LoadShellImage(job.path, w, h);
+            bgra = LoadShellImage(job.path, w, h, false);
+            if (!bgra) bgra = LoadFfmpegImage(job.path, w, h);
+            if (!bgra) bgra = LoadShellImage(job.path, w, h, true);
             std::lock_guard<std::mutex> lock(mu_);
             cache_.erase(job.path);
             while (cache_.size() >= kMaxEntries && !cacheOrder_.empty()) {

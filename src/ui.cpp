@@ -1371,6 +1371,41 @@ bool App::fbThumbsSettled() const {
     return true;
 }
 
+
+void App::recentApplyThumb(ThumbResult& result) {
+    if (!result.bgra || result.width <= 0 || result.height <= 0) {
+        recentThumbs_.erase(result.path);
+        recentThumbMissing_[result.path] = result.key;
+        dirty_ = true;
+        return;
+    }
+    auto bitmap = p_.CreateBitmapFromBgra(result.bgra->data(), result.width, result.height, result.width * 4);
+    if (!bitmap) {
+        recentThumbs_.erase(result.path);
+        recentThumbMissing_[result.path] = result.key;
+        dirty_ = true;
+        return;
+    }
+    recentThumbMissing_.erase(result.path);
+    recentThumbs_[result.path] = FbThumb{result.key, result.width, result.height, std::move(bitmap)};
+    dirty_ = true;
+}
+
+void App::recentSyncThumbs() {
+    if (!thumbnails_ || screen_ != Screen::Home || recents_.empty()) {
+        recentThumbsWorker_.cancel();
+        return;
+    }
+    std::vector<std::wstring> paths;
+    paths.reserve(recents_.size());
+    for (const auto& r : recents_) {
+        std::error_code ec;
+        if (std::filesystem::is_regular_file(r.path, ec)) paths.push_back(r.path);
+    }
+    recentThumbsWorker_.request(paths);
+    for (auto& result : recentThumbsWorker_.poll()) recentApplyThumb(result);
+}
+
 void App::fbSyncThumbs(bool request) {
     if (!thumbnails_ || popup_ != Popup::FileBrowser || fbMode_ != FbMode::MediaFile) {
         if (fbThumbActive_) {
@@ -1715,6 +1750,8 @@ void App::tick(double now, double dt) {
     dt = std::clamp(dt, 0.0, 0.1);
     lastTick_ = now;
     updateSystemStats();
+
+    if (screen_ == Screen::Home) recentSyncThumbs();
 
     if (hasMedia_) {
         if (rightPending_ && !rightBoost_ && now_ - rightDownAt_ >= 0.32) {
@@ -2553,7 +2590,25 @@ void App::headlessSetPopup(int popup) {
 void App::headlessSetSubtitleMode(int mode) { subtitleMode_ = std::clamp(mode, 0, 2); }
 
 void App::headlessWarmThumbnails() {
-    if (!headless_ || popup_ != Popup::FileBrowser || fbMode_ != FbMode::MediaFile) return;
+    if (!headless_) return;
+    if (screen_ == Screen::Home) {
+        const double deadline = QpcNow() + 6.0;
+        for (;;) {
+            layout();
+            recentSyncThumbs();
+            bool settled = true;
+            for (const auto& r : recents_) {
+                if (!recentThumbs_.count(r.path) && !recentThumbMissing_.count(r.path)) settled = false;
+            }
+            if (settled) return;
+            if (QpcNow() >= deadline) {
+                Log("thumbnail warm: timed out waiting for recent rows");
+                return;
+            }
+            Sleep(10);
+        }
+    }
+    if (popup_ != Popup::FileBrowser || fbMode_ != FbMode::MediaFile) return;
     const double deadline = QpcNow() + 6.0;
     for (;;) {
         layout();

@@ -140,6 +140,8 @@ public:
     void resize(int width, int height);
     void tick(double now, double dt);
     void updateSystemStats();
+    void recentSyncThumbs();
+    void recentApplyThumb(ThumbResult& result);
     void toggleSecondarySubtitle();
     void headlessSetSecondary(int ordinal);
     void pollFolder();
@@ -369,6 +371,9 @@ private:
     int fbLastClickIdx_ = -1;
     bool fbCanUp_ = false;
     ThumbnailCache fbThumbsWorker_;
+    ThumbnailCache recentThumbsWorker_;
+    std::unordered_map<std::wstring, FbThumb> recentThumbs_;
+    std::unordered_map<std::wstring, std::wstring> recentThumbMissing_;
     bool fbThumbActive_ = false;
     std::wstring fbThumbDir_;
     std::unordered_map<std::wstring, FbThumb> fbThumbs_;

@@ -428,8 +428,15 @@ void App::drawHome() {
             if (hov) p_.Round(row, 12.f, Hex(0xFFFFFF, 0.045f));
             RectF thumb{row.x + 8, row.y + 6, 104, 58};
             p_.PushClip(thumb, 8.f);
-            p_.Linear(thumb, Hex(0x17202C), Hex(0x2A3550), 135.f);
-            p_.Linear(thumb, Fade(theme::Accent, 0.12f), Fade(theme::AccentWarm, 0.06f), 45.f);
+            auto recentThumb = recentThumbs_.find(recents_[i].path);
+            if (recentThumb != recentThumbs_.end() && recentThumb->second.bitmap) {
+                p_.Bitmap(recentThumb->second.bitmap.Get(), thumb, 1.f, 0.f,
+                          D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC);
+                p_.Linear(thumb, Hex(0x000000, 0.02f), Hex(0x000000, 0.30f), 90.f);
+            } else {
+                p_.Linear(thumb, Hex(0x17202C), Hex(0x2A3550), 135.f);
+                p_.Linear(thumb, Fade(theme::Accent, 0.12f), Fade(theme::AccentWarm, 0.06f), 45.f);
+            }
             p_.PopClip();
             p_.PushClip(thumb, 8.f);
             p_.Circle(thumb.Cx(), thumb.Cy(), 14.f, Hex(0x000000, 0.35f));
