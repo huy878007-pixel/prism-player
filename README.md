@@ -180,6 +180,11 @@ src/
 3. 帧节奏与更高阶缩放
 4. 字幕/音轨菜单的完整可视化
 
+## 交接文档
+
+后续维护者/接手的 AI 请先读 [docs/AI_HANDOFF.md](docs/AI_HANDOFF.md)：包含当前状态、源码地图、线程模型、
+已知问题、验证命令和不要破坏的契约。
+
 ## 许可
 
 Prism 以 **GNU Affero General Public License v3.0 only** 发布，见 [LICENSE](LICENSE)。
