@@ -1,6 +1,7 @@
 # Third-party notices
 
-Prism bundles and links against the following third-party software:
+Prism itself is licensed under the **GNU Affero General Public License v3.0 only** (see `LICENSE`).
+It links against, or loads at runtime, the following third-party software:
 
 ## FFmpeg 8.1 (master build)
 
@@ -11,6 +12,11 @@ Prism bundles and links against the following third-party software:
 - The full license text is distributed with the binary as `LICENSE-FFMPEG.txt`.
 - Prism's source, including all modifications, is provided in this repository. When redistributing
   Prism binaries, comply with the GPL (source availability, notices, no additional restrictions).
+- Prism is AGPL-3.0-only. GPLv3 and AGPLv3 are compatible for combined works under GPLv3 section 13 /
+  AGPLv3 section 13; a distributed Prism binary is therefore accompanied by the AGPL source and the
+  FFmpeg GPL notices.
+- This source repository does **not** contain FFmpeg binaries or headers; they must be obtained separately
+  as described in `README.md`.
 
 ## libass 0.17.5 (native ASS/SSA subtitles)
 
